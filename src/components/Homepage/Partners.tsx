@@ -1,31 +1,40 @@
+import {Star} from "lucide-react"
 import {HttpService} from "../../utils/HttpService";
 import type {Partner} from "../../types/handler.ts";
 import {useQuery} from "@tanstack/react-query";
+import {useInView} from "../../utils/useInView";
+
+const CARD_STAGGER = 150
 
 export const Partners = () => {
     const {data: partners} = useQuery({
         queryKey: ["partners"],
         queryFn: () => HttpService.get<Partner[]>("/api/partners"),
-
     });
 
+    const { ref, inView: isInView } = useInView<HTMLDivElement>(0.4)
+
     return (
-        <div className="flex flex-col gap-12 px-4 py-16 items-center mb-16" id="centers">
-            <div className="flex flex-col items-center text-center gap-4 mb-8">
+        <div ref={ref} className="flex flex-col gap-12 px-4 py-16 items-center mb-16" id="centers">
+            <div className={`flex flex-col items-center text-center gap-4 mb-8 transition-all duration-700 ${isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
                 <h2 className="text-on-surface text-headline-lg font-black leading-tight max-w-180">
                     مراکز معتبر، تایید شده توسط مشتریان
                 </h2>
                 <p className="text-on-surface-variant text-body-lg font-normal leading-normal max-w-180">ما بهترین مراکز خدمات خودرو را گرد هم آورده‌ایم تا با اطمینان کامل انتخاب کنید.</p>
             </div>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-8 w-full">
-                {partners?.map((partner) => (
-                    <div key={partner.id} className="flex flex-col gap-4 bg-surface rounded-[2rem]  overflow-hidden shadow-md hover:shadow-xl transition-all border border-surface-variant">
+                {partners?.map((partner, cardIdx) => (
+                    <div
+                        key={partner.id}
+                        className={`flex flex-col gap-4 bg-surface rounded-[2rem] overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 border border-surface-variant ${isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}
+                        style={{ transitionDelay: `${cardIdx * CARD_STAGGER}ms` }}
+                    >
                         <div className="h-48 bg-cover bg-center" style={{ backgroundImage: `url('${partner.imageUrl}')` }}></div>
                         <div className="p-6 flex flex-col gap-3">
                             <div className="flex justify-between items-center">
                                 <h3 className="text-on-surface text-title-lg font-bold">{partner.title}</h3>
                                 <div className="flex items-center gap-1 text-tertiary-fixed-dim">
-                                    <span className="material-symbols-outlined text-sm">star</span>
+                                    <Star className="size-4" strokeWidth={1.5}/>
                                     <span className="text-label-lg font-bold text-on-surface">{partner.rating}</span>
                                 </div>
                             </div>
