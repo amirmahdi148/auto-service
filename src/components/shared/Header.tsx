@@ -3,8 +3,9 @@ import {Link, useLocation} from "react-router";
 
 const links = [
     { id: 1, title: "صفحه اصلی", to: "/" },
-    { id: 2, title: "درباره ما", to: "/aboutus" },
-    { id: 3, title: "مقالات", to: "/blogs" },
+    { id: 2, title: "خدمات", to: "/services" },
+    { id: 3, title: "درباره ما", to: "/aboutus" },
+    { id: 4, title: "مقالات", to: "/blogs" },
 ];
 
 export const Header = () => {

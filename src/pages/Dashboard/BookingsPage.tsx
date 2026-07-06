@@ -1,4 +1,4 @@
-import {useState, useEffect} from "react";
+import {useState, useEffect, useRef} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {
     CalendarDays,
@@ -21,6 +21,7 @@ import {
     MapPin,
 } from "lucide-react";
 import {HttpService} from "../../utils/HttpService.ts";
+import {useAuth} from "../../contexts/useAuth.ts";
 import type {BookingStatus} from "../../api/data/bookings.ts";
 
 /* ============================================================================
@@ -100,11 +101,39 @@ const RowSkeleton = () => (
 
 /* ---------- Page ---------- */
 
+import {NewBookingModal} from "../../components/Dashboard/NewBookingModal.tsx";
+
+type SortField = "date" | "amount" | "status" | "customer";
+type SortOrder = "asc" | "desc";
+
+const SORT_OPTIONS: { field: SortField; label: string }[] = [
+    { field: "date", label: "تاریخ" },
+    { field: "amount", label: "مبلغ" },
+    { field: "status", label: "وضعیت" },
+];
+
 export const BookingsPage = () => {
+    const { role } = useAuth();
+    const isUser = role === "user";
     const [status, setStatus] = useState<"all" | BookingStatus>("all");
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [page, setPage] = useState(1);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [sortBy, setSortBy] = useState<SortField>("date");
+    const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+    const [activeMenu, setActiveMenu] = useState<string | null>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setActiveMenu(null);
+            }
+        };
+        document.addEventListener("mousedown", handleClick);
+        return () => document.removeEventListener("mousedown", handleClick);
+    }, []);
 
     // Debounce search input to avoid a request per keystroke.
     useEffect(() => {
@@ -112,11 +141,11 @@ export const BookingsPage = () => {
         return () => clearTimeout(t);
     }, [search]);
 
-    // Primary list query — re-runs on status / search / page change.
+    // Primary list query — re-runs on status / search / page / sort change.
     const { data, isFetching } = useQuery({
-        queryKey: ["bookings", { status, search: debouncedSearch, page }],
+        queryKey: ["bookings", { status, search: debouncedSearch, page, sortBy, sortOrder }],
         queryFn: () => {
-            const params: Record<string, string | number | undefined> = { page, limit: 8 };
+            const params: Record<string, string | number | undefined> = { page, limit: 8, sortBy, sortOrder };
             if (status !== "all") params.status = status;
             if (debouncedSearch) params.search = debouncedSearch;
             return HttpService.get<BookingsResponse>("/api/bookings", { params });
@@ -150,7 +179,9 @@ export const BookingsPage = () => {
                             {toFa(totalItems)} مورد
                         </span>
                     </div>
-                    <p className="text-on-surface-variant text-body-md">مدیریت و پیگیری نوبت‌ها و رزروهای خدمات</p>
+                    <p className="text-on-surface-variant text-body-md">
+                        {isUser ? "مشاهده و پیگیری نوبت‌های رزرو شده شما" : "مدیریت و پیگیری نوبت‌ها و رزروهای خدمات"}
+                    </p>
                 </div>
                 <div className="flex items-center gap-2">
                     {/* Secondary export action */}
@@ -159,7 +190,10 @@ export const BookingsPage = () => {
                         <span className="hidden sm:inline">خروجی</span>
                     </button>
                     {/* Primary CTA */}
-                    <button className="flex items-center gap-2 h-11 px-5 rounded-full bg-primary text-on-primary font-bold text-label-lg cursor-pointer hover:bg-primary-container transition-colors">
+                    <button 
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center gap-2 h-11 px-5 rounded-full bg-primary text-on-primary font-bold text-label-lg cursor-pointer hover:bg-primary-container transition-colors"
+                    >
                         <Plus className="size-4" strokeWidth={2}/>
                         <span className="hidden sm:inline">رزرو جدید</span>
                         <span className="sm:hidden">جدید</span>
@@ -207,8 +241,41 @@ export const BookingsPage = () => {
                     )}
                 </div>
 
-                {/* Status filter chips — horizontally scrollable on mobile */}
+                {/* Sort + Status filter chips — horizontally scrollable on mobile */}
                 <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    {/* Sort dropdown */}
+                    <div className="flex items-center gap-1 shrink-0">
+                        {SORT_OPTIONS.map((opt) => {
+                            const active = sortBy === opt.field;
+                            return (
+                                <button
+                                    key={opt.field}
+                                    onClick={() => {
+                                        if (active) {
+                                            setSortOrder((o) => (o === "asc" ? "desc" : "asc"));
+                                        } else {
+                                            setSortBy(opt.field);
+                                            setSortOrder("asc");
+                                        }
+                                        setPage(1);
+                                    }}
+                                    className={`flex items-center gap-1 h-9 px-3 rounded-full text-label-sm font-bold whitespace-nowrap cursor-pointer transition-colors ${
+                                        active
+                                            ? "bg-primary text-on-primary"
+                                            : "bg-surface-container-low text-on-surface-variant border border-outline-variant hover:border-primary/30 hover:text-on-surface"
+                                    }`}
+                                >
+                                    {opt.label}
+                                    {active && (
+                                        <span className="text-label-xs">{sortOrder === "asc" ? "↑" : "↓"}</span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <div className="w-px h-6 bg-outline-variant/50 shrink-0" />
+
                     {STATUS_FILTERS.map((f) => {
                         const active = status === f.id;
                         return (
@@ -251,7 +318,7 @@ export const BookingsPage = () => {
                             <table className="w-full text-right border-collapse">
                                 <thead>
                                 <tr className="text-on-surface-variant text-label-sm bg-surface-container-low">
-                                    <th className="font-bold px-5 py-3">مشتری</th>
+                                    {!isUser && <th className="font-bold px-5 py-3">مشتری</th>}
                                     <th className="font-bold px-5 py-3">خدمت / خودرو</th>
                                     <th className="font-bold px-5 py-3">مرکز</th>
                                     <th className="font-bold px-5 py-3">تاریخ و زمان</th>
@@ -265,17 +332,19 @@ export const BookingsPage = () => {
                                     const meta = STATUS_META[b.status];
                                     return (
                                         <tr key={b.id} className="hover:bg-surface-container-low transition-colors">
-                                            <td className="px-5 py-3">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-sm font-bold shrink-0">
-                                                        {b.customer.charAt(0)}
+                                            {!isUser && (
+                                                <td className="px-5 py-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-9 h-9 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-sm font-bold shrink-0">
+                                                            {b.customer.charAt(0)}
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-on-surface text-label-lg font-bold">{b.customer}</span>
+                                                            <span className="text-on-surface-variant text-label-sm" dir="ltr">{b.phone}</span>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-on-surface text-label-lg font-bold">{b.customer}</span>
-                                                        <span className="text-on-surface-variant text-label-sm" dir="ltr">{b.phone}</span>
-                                                    </div>
-                                                </div>
-                                            </td>
+                                                </td>
+                                            )}
                                             <td className="px-5 py-3">
                                                 <div className="flex flex-col">
                                                     <span className="text-on-surface text-label-lg">{b.service}</span>
@@ -298,10 +367,32 @@ export const BookingsPage = () => {
                                                         {meta.label}
                                                     </span>
                                             </td>
-                                            <td className="px-5 py-3">
-                                                <button aria-label="گزینه‌ها" className="flex items-center justify-center w-8 h-8 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface cursor-pointer">
+                                            <td className="px-5 py-3 relative">
+                                                <button
+                                                    onClick={() => setActiveMenu(activeMenu === b.id ? null : b.id)}
+                                                    aria-label="گزینه‌ها"
+                                                    className="flex items-center justify-center w-8 h-8 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface cursor-pointer"
+                                                >
                                                     <MoreHorizontal className="size-5" strokeWidth={1.5}/>
                                                 </button>
+                                                {activeMenu === b.id && (
+                                                    <div ref={menuRef} className="absolute left-0 top-full mt-1 z-20 min-w-40 bg-surface border border-outline-variant rounded-xl shadow-lg py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+                                                        <button onClick={() => { console.log("جزئیات", b.id); setActiveMenu(null); }} className="w-full text-right px-4 py-2.5 mx-1 rounded-lg text-label-md font-bold text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer">
+                                                            مشاهده جزئیات
+                                                        </button>
+                                                        <button onClick={() => { console.log("تغییر زمان", b.id); setActiveMenu(null); }} className="w-full text-right px-4 py-2.5 mx-1 rounded-lg text-label-md font-bold text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer">
+                                                            تغییر زمان
+                                                        </button>
+                                                        {b.status === "pending" && (
+                                                            <>
+                                                                <div className="h-px bg-outline-variant/50 my-1 mx-1" />
+                                                                <button onClick={() => { console.log("لغو", b.id); setActiveMenu(null); }} className="w-full text-right px-4 py-2.5 mx-1 rounded-lg text-label-md font-bold text-error hover:bg-error/5 transition-colors cursor-pointer">
+                                                                    لغو نوبت
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </td>
                                         </tr>
                                     );
@@ -319,10 +410,12 @@ export const BookingsPage = () => {
                                         <div className="flex items-center justify-between gap-3">
                                             <div className="flex items-center gap-3 min-w-0">
                                                 <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-lg font-bold shrink-0">
-                                                    {b.customer.charAt(0)}
+                                                    {isUser ? <CalendarClock className="size-5"/> : b.customer.charAt(0)}
                                                 </div>
                                                 <div className="flex flex-col min-w-0">
-                                                    <span className="text-on-surface text-label-lg font-bold truncate">{b.customer}</span>
+                                                    <span className="text-on-surface text-label-lg font-bold truncate">
+                                                        {isUser ? b.service : b.customer}
+                                                    </span>
                                                     <span className="text-on-surface-variant text-label-sm">#{b.id}</span>
                                                 </div>
                                             </div>
@@ -394,7 +487,7 @@ export const BookingsPage = () => {
                         <h3 className="text-on-surface text-title-lg font-bold">رزروی یافت نشد</h3>
                         <p className="text-on-surface-variant text-body-md max-w-sm">هیچ رزرو‌ای با این فیلتر یا عبارت جستجو وجود ندارد. فیلتر را تغییر دهید یا رزرو جدیدی ثبت کنید.</p>
                         <button
-                            onClick={() => { setStatus("all"); setSearch(""); }}
+                            onClick={() => { setStatus("all"); setSearch(""); setIsModalOpen(true); }}
                             className="flex items-center gap-2 mt-1 px-5 h-10 rounded-full bg-primary text-on-primary font-bold text-label-lg cursor-pointer hover:bg-primary-container transition-colors"
                         >
                             <CalendarPlus className="size-4" strokeWidth={1.5}/>
@@ -403,6 +496,8 @@ export const BookingsPage = () => {
                     </div>
                 )}
             </div>
+
+            <NewBookingModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
         </div>
     );
 };

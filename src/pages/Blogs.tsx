@@ -63,10 +63,10 @@ export const BlogsPage = () => {
         placeholderData: (previousData) => previousData,
     });
 
-    const enriched = data?.data.map((p) => ({
+    const enriched: Post[] | undefined = data?.data.map((p) => ({
         ...p,
         catIcon: CATEGORY_ICONS[p.category] ?? Newspaper,
-    })) as Post[] | undefined;
+    }));
 
     const handleCategoryChange = (label: string) => {
         setActiveCategory(label);

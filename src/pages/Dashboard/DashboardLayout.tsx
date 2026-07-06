@@ -13,8 +13,11 @@ import {
     X,
     Bell,
     Search,
-
+    CarFront,
+    Heart,
+    Headset
 } from "lucide-react";
+import {useAuth} from "../../contexts/useAuth.ts";
 
 /* ============================================================================
  * DASHBOARD LAYOUT — shell with redesigned sidebar + topbar
@@ -44,7 +47,7 @@ interface NavSection {
     items: NavItem[];
 }
 
-const NAV_SECTIONS: NavSection[] = [
+const SPECIALIST_SECTIONS: NavSection[] = [
     {
         title: "اصلی",
         items: [
@@ -69,104 +72,123 @@ const NAV_SECTIONS: NavSection[] = [
     },
 ];
 
+const USER_SECTIONS: NavSection[] = [
+    {
+        title: "اصلی",
+        items: [
+            { to: "/dashboard/overview", label: "داشبورد", icon: LayoutDashboard, end: true },
+            { to: "/dashboard/bookings", label: "نوبت‌های من", icon: CalendarDays },
+            { to: "/dashboard/vehicles", label: "خودروهای من", icon: CarFront },
+            { to: "/dashboard/favorites", label: "مراکز مورد علاقه", icon: Heart },
+            { to: "/dashboard/support", label: "پشتیبانی", icon: Headset },
+        ],
+    },
+    {
+        title: "حساب کاربری",
+        items: [
+            { to: "/dashboard/settings", label: "تنظیمات", icon: Settings },
+        ],
+    },
+];
+
 /* The sidebar body — shared between the desktop rail and the mobile drawer.
    `onNavigate` lets the mobile drawer close itself after a link is tapped. */
-const SidebarBody = ({ onNavigate }: { onNavigate?: () => void }) => (
-    <div className="flex flex-col h-full">
+const SidebarBody = ({ onNavigate }: { onNavigate?: () => void }) => {
+    const { user, role } = useAuth();
+    const sections = role === "specialist" ? SPECIALIST_SECTIONS : USER_SECTIONS;
+    const subtitle = role === "specialist" ? "پنل مدیریت" : "پنل کاربری";
+    const initials = user?.name?.charAt(0) ?? "آ";
 
-        {/* ===== Brand header ===== */}
-        <div className="flex items-center gap-3 px-5 h-16 shrink-0 border-b border-outline-variant">
-            <div className="size-8 text-primary">
-                <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                    <path clipRule="evenodd" d="M12.0799 24L4 19.2479L9.95537 8.75216L18.04 13.4961L18.0446 4H29.9554L29.96 13.4961L38.0446 8.75216L44 19.2479L35.92 24L44 28.7521L38.0446 39.2479L29.96 34.5039L29.9554 44H18.0446L18.04 34.5039L9.95537 39.2479L4 28.7521L12.0799 24Z" fill="currentColor" fillRule="evenodd"/>
-                </svg>
-            </div>
-            <div className="flex flex-col leading-tight">
-                <span className="text-on-surface text-title-lg font-black tracking-[-0.015em]">اتو پلاس</span>
-                <span className="text-on-surface-variant text-label-sm">پنل مدیریت</span>
-            </div>
-        </div>
+    return (
+        <div className="flex flex-col h-full">
 
-        {/* ===== Sectioned navigation (scrollable) ===== */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-6">
-            {NAV_SECTIONS.map((section) => (
-                <div key={section.title} className="flex flex-col gap-1">
-                    <span className="px-4 mb-1 text-on-surface-variant text-label-sm font-bold">{section.title}</span>
-                    {section.items.map((item) => (
-                        <NavLink
-                            key={item.to}
-                            to={item.to}
-                            end={item.end}
-                            onClick={onNavigate}
-                            className={({ isActive }) =>
-                                /* Active = right-aligned accent bar + tint (DESIGN.md).
-                                   The bar is absolute on the inline-start (right in RTL). */
-                                `group relative flex items-center gap-3 pr-4 pl-3 h-11 rounded-xl text-label-lg font-bold transition-colors ${
-                                    isActive
-                                        ? "bg-primary/10 text-primary"
-                                        : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-                                }`
-                            }
-                        >
-                            {({ isActive }) => (
-                                <>
-                                    {/* Active accent bar */}
-                                    {isActive && (
-                                        <span className="absolute inset-y-2.5 right-0 w-1 rounded-full bg-primary"/>
-                                    )}
-                                    <item.icon className="size-5 shrink-0" strokeWidth={isActive ? 2 : 1.5}/>
-                                    <span className="flex-1">{item.label}</span>
-                                    {/* Badge — Red for urgent (pending items), else neutral */}
-                                    {item.badge && (
-                                        <span className={`flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-label-xs font-bold ${
-                                            item.badge === "۳" ? "bg-secondary text-on-secondary" : "bg-primary/10 text-primary"
-                                        }`}>
-                                            {item.badge}
-                                        </span>
-                                    )}
-                                </>
-                            )}
-                        </NavLink>
-                    ))}
+            {/* ===== Brand header ===== */}
+            <div className="flex items-center gap-3 px-5 h-16 shrink-0 border-b border-outline-variant">
+                <div className="size-8 text-primary">
+                    <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                        <path clipRule="evenodd" d="M12.0799 24L4 19.2479L9.95537 8.75216L18.04 13.4961L18.0446 4H29.9554L29.96 13.4961L38.0446 8.75216L44 19.2479L35.92 24L44 28.7521L38.0446 39.2479L29.96 34.5039L29.9554 44H18.0446L18.04 34.5039L9.95537 39.2479L4 28.7521L12.0799 24Z" fill="currentColor" fillRule="evenodd"/>
+                    </svg>
                 </div>
-            ))}
-        </nav>
+                <div className="flex flex-col leading-tight">
+                    <span className="text-on-surface text-title-lg font-black tracking-[-0.015em]">اتو پلاس</span>
+                    <span className="text-on-surface-variant text-label-sm">{subtitle}</span>
+                </div>
+            </div>
 
-        {/* ===== User profile card + logout ===== */}
-        <div className="shrink-0 border-t border-outline-variant p-3">
-            <div className="flex items-center gap-3 p-2 rounded-xl">
-                <div className="relative shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-lg font-bold">
-                        آ
+            {/* ===== Sectioned navigation (scrollable) ===== */}
+            <nav className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-6">
+                {sections.map((section) => (
+                    <div key={section.title} className="flex flex-col gap-1">
+                        <span className="px-4 mb-1 text-on-surface-variant text-label-sm font-bold">{section.title}</span>
+                        {section.items.map((item) => (
+                            <NavLink
+                                key={item.to}
+                                to={item.to}
+                                end={item.end}
+                                onClick={onNavigate}
+                                className={({ isActive }) =>
+                                    `group relative flex items-center gap-3 pr-4 pl-3 h-11 rounded-xl text-label-lg font-bold transition-colors ${
+                                        isActive
+                                            ? "bg-primary/10 text-primary"
+                                            : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+                                    }`
+                                }
+                            >
+                                {({ isActive }) => (
+                                    <>
+                                        {isActive && (
+                                            <span className="absolute inset-y-2.5 right-0 w-1 rounded-full bg-primary"/>
+                                        )}
+                                        <item.icon className="size-5 shrink-0" strokeWidth={isActive ? 2 : 1.5}/>
+                                        <span className="flex-1">{item.label}</span>
+                                        {item.badge && (
+                                            <span className={`flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-label-xs font-bold ${
+                                                item.badge === "۳" ? "bg-secondary text-on-secondary" : "bg-primary/10 text-primary"
+                                            }`}>
+                                                {item.badge}
+                                            </span>
+                                        )}
+                                    </>
+                                )}
+                            </NavLink>
+                        ))}
                     </div>
-                    {/* Online indicator dot */}
-                    <span className="absolute -bottom-0.5 -left-0.5 w-3 h-3 rounded-full bg-primary ring-2 ring-surface"/>
+                ))}
+            </nav>
+
+            {/* ===== User profile card + logout ===== */}
+            <div className="shrink-0 border-t border-outline-variant p-3">
+                <div className="flex items-center gap-3 p-2 rounded-xl">
+                    <div className="relative shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-lg font-bold">
+                            {initials}
+                        </div>
+                        <span className="absolute -bottom-0.5 -left-0.5 w-3 h-3 rounded-full bg-primary ring-2 ring-surface"/>
+                    </div>
+                    <div className="flex-1 min-w-0 flex flex-col leading-tight">
+                        <span className="text-on-surface text-label-lg font-bold truncate">{user?.name ?? "کاربر"}</span>
+                        <span className="text-on-surface-variant text-label-sm truncate">{subtitle}</span>
+                    </div>
+                    <button
+                        aria-label="خروج"
+                        className="flex items-center justify-center w-9 h-9 rounded-full text-on-surface-variant hover:bg-secondary/10 hover:text-secondary transition-colors cursor-pointer"
+                    >
+                        <LogOut className="size-4" strokeWidth={1.5}/>
+                    </button>
                 </div>
-                <div className="flex-1 min-w-0 flex flex-col leading-tight">
-                    <span className="text-on-surface text-label-lg font-bold truncate">آرش رضایی</span>
-                    <span className="text-on-surface-variant text-label-sm truncate">مدیر سیستم</span>
-                </div>
-                {/* Logout — destructive action uses the Red accent (DESIGN.md) */}
-                <button
-                    aria-label="خروج"
-                    className="flex items-center justify-center w-9 h-9 rounded-full text-on-surface-variant hover:bg-secondary/10 hover:text-secondary transition-colors cursor-pointer"
-                >
-                    <LogOut className="size-4" strokeWidth={1.5}/>
-                </button>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 export const DashboardLayout = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
 
-    // Lock body scroll while the mobile drawer is open.
     useEffect(() => {
-        if (drawerOpen) {
-            document.body.style.overflow = "hidden";
-            return () => { document.body.style.overflow = ""; };
-        }
+        if (!drawerOpen) return;
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => { document.body.style.overflow = prev; };
     }, [drawerOpen]);
 
     return (

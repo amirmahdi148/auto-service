@@ -2,6 +2,7 @@ import { http, HttpResponse } from "msw"
 import type {Partner} from "../types/handler.ts";
 import {POSTS} from "./data/blogs.ts";
 import {BOOKINGS} from "./data/bookings.ts";
+import {SERVICES} from "./data/services.ts";
 const partners: Partner[] = [
     {
         id: 1,
@@ -97,13 +98,15 @@ export const handlers = [
         });
     }),
 
-    // Bookings list — supports status filter, search, and pagination.
+    // Bookings list — supports status filter, search, sort and pagination.
     http.get("/api/bookings", ({ request }) => {
         const url = new URL(request.url);
         const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
         const limit = Math.max(1, Math.min(50, parseInt(url.searchParams.get("limit") ?? "8", 10) || 8));
         const status = url.searchParams.get("status");   // "all" | BookingStatus
         const search = url.searchParams.get("search");
+        const sortBy = url.searchParams.get("sortBy") || "date";
+        const sortOrder = url.searchParams.get("sortOrder") || "asc";
 
         let filtered = BOOKINGS;
         if (status && status !== "all") {
@@ -121,12 +124,123 @@ export const handlers = [
             );
         }
 
-        const totalItems = filtered.length;
+        const sorted = [...filtered].sort((a, b) => {
+            // eslint-disable-next-line no-useless-assignment
+            let cmp = 0;
+            switch (sortBy) {
+                case "amount":
+                    cmp = a.amount - b.amount;
+                    break;
+                case "status":
+                    cmp = a.status.localeCompare(b.status);
+                    break;
+                case "customer":
+                    cmp = a.customer.localeCompare(b.customer);
+                    break;
+                default:
+                    cmp = a.dateISO.localeCompare(b.dateISO);
+            }
+            return sortOrder === "desc" ? -cmp : cmp;
+        });
+
+        const totalItems = sorted.length;
         const totalPages = Math.max(1, Math.ceil(totalItems / limit));
         const start = (page - 1) * limit;
-        const paginated = filtered.slice(start, start + limit);
+        const paginated = sorted.slice(start, start + limit);
 
         return HttpResponse.json({ data: paginated, meta: { page, limit, totalPages, totalItems } });
-    })
+    }),
+
+    http.get("/api/top-centers", () => {
+        return HttpResponse.json([
+            { name: "تعمیرگاه آریا", rating: "۴.۹", bookings: 86, share: 96 },
+            { name: "مرکز خدمات پارس", rating: "۴.۷", bookings: 72, share: 80 },
+            { name: "اتوسرویس شرق", rating: "۴.۸", bookings: 58, share: 65 },
+            { name: "کلینیک تخصصی درخشش", rating: "۴.۹", bookings: 43, share: 51 },
+            { name: "لاستیک و جلوبندی پارس", rating: "۴.۷", bookings: 37, share: 44 },
+        ]);
+    }),
+
+    http.get("/api/services", ({ request }) => {
+        const url = new URL(request.url);
+        const category = url.searchParams.get("category");
+        const search = url.searchParams.get("search");
+
+        let filtered = SERVICES;
+        if (category && category !== "همه") {
+            filtered = SERVICES.filter((s) => s.category === category);
+        }
+        if (search) {
+            const q = search.trim();
+            filtered = filtered.filter(
+                (s) => s.title.includes(q) || s.desc.includes(q) || s.category.includes(q),
+            );
+        }
+
+        const data = filtered.map((s) => ({
+            id: s.id,
+            category: s.category,
+            title: s.title,
+            desc: s.desc,
+            duration: s.duration,
+            rating: s.rating,
+            reviewCount: s.reviewCount,
+            fromPrice: s.fromPrice,
+        }));
+
+        return HttpResponse.json({
+            data,
+            meta: { total: data.length },
+        });
+    }),
+
+    http.get("/api/auth/check", () => {
+        const user = {
+            status: "ok",
+            role: "user" as const,
+            name: "am1r",
+            username: "Am1r",
+            phone: "09123456789",
+            avatar: "basicURL",
+        };
+        return HttpResponse.json({ authenticated: true, user });
+    }),
+
+    http.post("/api/bookings", async ({ request }) => {
+        const body = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({
+            success: true,
+            id: `B-${Date.now()}`,
+            ...body,
+        }, { status: 201 });
+    }),
+
+    http.post("/api/login", async ({ request }) => {
+        const body = (await request.json()) as { email?: string; password?: string };
+        const { email, password } = body ?? {};
+
+        if (email === "example@gmail.com" && password === "12345678") {
+            return HttpResponse.json({ success: true, message: "ورود موفق" });
+        }
+
+        return HttpResponse.json(
+            { success: false, message: "ایمیل یا رمز عبور نادرست است" },
+            { status: 401 }
+        );
+    }),
+
+    http.get("/api/auth/me", () => {
+        return HttpResponse.json({
+            status: "ok",
+            role: "user" /* "specialist / user"  Both works */,
+            name: "am1r",
+            username: "Am1r",
+            phone: "09123456789",
+            avatar: "basicURL",
+            // This is user/specialist self-data response
+            // Specialist = Service provider
+        });
+    }),
+
 
 ]

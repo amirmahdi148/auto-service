@@ -30,7 +30,7 @@ export const SingleBlogPage = () => {
 
     const { data: relatedData } = useQuery({
         queryKey: ["related", post?.category],
-        queryFn: () => HttpService.get<{ data: RelatedPost[] }>("/api/blogs", { params: { limit: 4 } }),
+        queryFn: () => HttpService.get<{ data: RelatedPost[] }>("/api/blogs", { params: { limit: 4, category: post?.category } }),
         enabled: !!post,
     });
     const related = (relatedData?.data ?? [])
@@ -58,7 +58,10 @@ export const SingleBlogPage = () => {
             await navigator.clipboard.writeText(window.location.href);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        } catch { /* clipboard not available */ }
+        } catch {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
     };
 
     const shareOn = (platform: string) => {

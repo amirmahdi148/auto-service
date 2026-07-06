@@ -1,4 +1,5 @@
 import {useInView} from "../../utils/useInView";
+import {Link} from "react-router";
 
 export const CtaSection = () => {
     const { ref, inView } = useInView<HTMLDivElement>(0.3)
@@ -15,12 +16,18 @@ export const CtaSection = () => {
                     به هزاران مشتری که روزانه به دنبال خدمات با کیفیت خودرو هستند متصل شوید. با پیوستن به بازارگاه ما، نوبت‌دهی خود را مدیریت کنید، نظرات مشتریان را دریافت کنید و درآمد خود را افزایش دهید.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 mt-4">
-                    <button className="flex min-w-[120px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 px-8 bg-secondary text-on-secondary text-title-lg font-bold leading-normal transition-transform hover:scale-105 shadow-lg">
+                    <Link
+                        to="/login"
+                        className="flex min-w-[120px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 px-8 bg-on-primary text-primary text-title-lg font-bold leading-normal transition-transform hover:scale-105 shadow-lg"
+                    >
                         ثبت‌نام به عنوان متخصص
-                    </button>
-                    <button className="flex min-w-[120px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 px-8 bg-transparent border-2 border-on-primary text-on-primary text-title-lg font-bold leading-normal transition-colors hover:bg-on-primary/10">
+                    </Link>
+                    <Link
+                        to="/aboutus"
+                        className="flex min-w-[120px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 px-8 bg-transparent border-2 border-on-primary text-on-primary text-title-lg font-bold leading-normal transition-colors hover:bg-on-primary/10"
+                    >
                         کسب اطلاعات بیشتر
-                    </button>
+                    </Link>
                 </div>
             </div>
             <div className="w-full lg:w-2/5 flex justify-center z-10">

@@ -1,6 +1,8 @@
 import {useState} from "react";
 import {useInView} from "../../utils/useInView";
 import {Plus, ArrowLeft} from "lucide-react";
+import {Link} from "react-router";
+import {SectionHeading} from "./SectionHeading";
 
 const FAQS = [
     { q: "آیا رزرو نوبت از طریق پلتفرم هزینه‌ای دارد؟", a: "خیر، ثبت‌نام و رزرو نوبت برای مشتریان کاملاً رایگان است. شما فقط هزینه خود خدمت را به مرکز پرداخت می‌کنید." },
@@ -9,28 +11,12 @@ const FAQS = [
     { q: "آیا امکان لغو یا تغییر نوبت وجود دارد؟", a: "بله، می‌توانید نوبت خود را تا چند ساعت قبل از زمان مقرر از طریق پنل کاربری لغو یا تغییر دهید." },
 ];
 
-const SectionHeading = ({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) => (
-    <div className="flex flex-col items-center text-center gap-3">
-        <span className="w-fit px-4 py-1 rounded-full bg-primary/10 text-primary text-label-sm font-bold tracking-wide">
-            {eyebrow}
-        </span>
-        <h2 className="text-on-surface text-headline-lg font-black leading-tight max-w-[720px]">
-            {title}
-        </h2>
-        {subtitle && (
-            <p className="text-on-surface-variant text-body-lg font-normal leading-normal max-w-[720px]">
-                {subtitle}
-            </p>
-        )}
-    </div>
-);
-
 export const Faq = () => {
     const { ref, inView } = useInView<HTMLDivElement>(0.2);
     const [openFaq, setOpenFaq] = useState<number>(0);
 
     return (
-        <div ref={ref} className="flex flex-col gap-8 px-4 max-w-3xl w-full self-center" id="faq">
+        <div ref={ref} className="flex flex-col gap-8 max-w-3xl w-full self-center" id="faq">
             <div className={`transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
                 <SectionHeading eyebrow="راهنما" title="سوالات متداول" subtitle="پاسخ پرسش‌های پرتکرار را اینجا بیابید."/>
             </div>
@@ -60,9 +46,9 @@ export const Faq = () => {
             </div>
             <div className="flex items-center justify-center gap-2 text-on-surface-variant">
                 <span className="text-body-md">سوال دیگری دارید؟</span>
-                <a href="#" className="flex items-center gap-1 text-primary font-bold text-body-md hover:gap-2 transition-all">
+                <Link to="/aboutus" className="flex items-center gap-1 text-primary font-bold text-body-md hover:gap-2 transition-all">
                     با پشتیبانی در ارتباط باشید <ArrowLeft className="size-4" strokeWidth={2}/>
-                </a>
+                </Link>
             </div>
         </div>
     );

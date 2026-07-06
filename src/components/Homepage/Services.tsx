@@ -23,7 +23,7 @@ export const Services = () => {
     const { ref, inView } = useInView<HTMLDivElement>(0.4)
 
     return (
-        <div ref={ref} className="flex flex-col gap-12 px-4 py-16 @container smooth-curve-top bg-surface-container-low rounded-[3rem] mb-16" id="services">
+        <div ref={ref} className="flex flex-col gap-12 py-16 @container smooth-curve-top bg-surface-container-low rounded-[3rem] mb-16" id="services">
             <div className={`flex flex-col items-center text-center gap-4 transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
                 <h2 className="text-on-surface text-headline-lg font-black leading-tight max-w-[720px]">
                     تنوع بی‌نظیر خدمات

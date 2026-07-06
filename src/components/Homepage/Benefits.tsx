@@ -1,5 +1,6 @@
 import {useInView} from "../../utils/useInView";
 import {BadgeCheck, MessageSquareQuote, Zap, Headphones, CreditCard, ShieldCheck} from "lucide-react";
+import {SectionHeading} from "./SectionHeading";
 
 const BENEFITS = [
     { Icon: BadgeCheck, title: "متخصصان تأییدشده", desc: "هر مرکز پس از بررسی مدارک و مهارت، توسط تیم ما تأیید می‌شود." },
@@ -10,27 +11,11 @@ const BENEFITS = [
     { Icon: ShieldCheck, title: "ضمانت کیفیت", desc: "خدمات با تضمین رضایت ارائه می‌شود؛ در غیر این صورت پیگیر هستیم." },
 ];
 
-const SectionHeading = ({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) => (
-    <div className="flex flex-col items-center text-center gap-3">
-        <span className="w-fit px-4 py-1 rounded-full bg-primary/10 text-primary text-label-sm font-bold tracking-wide">
-            {eyebrow}
-        </span>
-        <h2 className="text-on-surface text-headline-lg font-black leading-tight max-w-[720px]">
-            {title}
-        </h2>
-        {subtitle && (
-            <p className="text-on-surface-variant text-body-lg font-normal leading-normal max-w-[720px]">
-                {subtitle}
-            </p>
-        )}
-    </div>
-);
-
 export const Benefits = () => {
     const { ref, inView } = useInView<HTMLDivElement>(0.3);
 
     return (
-        <div ref={ref} className="flex flex-col gap-12 px-4 py-8 bg-surface-container-low rounded-[3rem]" id="benefits">
+        <div ref={ref} className="flex flex-col gap-12 py-8 bg-surface-container-low rounded-[3rem]" id="benefits">
             <div className={`transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
                 <SectionHeading eyebrow="مزایای ما" title="چرا اتو پلاس؟" subtitle="تمام آنچه برای یک تجربه بی‌دردسر خدمات خودرو لازم دارید، در یک‌جا."/>
             </div>

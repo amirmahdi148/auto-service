@@ -9,8 +9,12 @@ const queryClient = new QueryClient()
 
 async function start() {
     if (import.meta.env.DEV) {
-        const { worker } = await import("./api/browser")
-        await worker.start()
+        try {
+            const { worker } = await import("./api/browser")
+            await worker.start()
+        } catch (e) {
+            console.warn("[MSW] Failed to start mock service worker, continuing without mocks:", e)
+        }
     }
 
     createRoot(document.getElementById('root')!).render(

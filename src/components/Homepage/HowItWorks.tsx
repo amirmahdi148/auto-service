@@ -1,5 +1,6 @@
 import {useInView} from "../../utils/useInView";
 import {Search, GitCompare, CalendarCheck, Car} from "lucide-react";
+import {SectionHeading} from "./SectionHeading";
 
 const STEPS = [
     { Icon: Search, title: "جستجوی خدمت", desc: "نوع خدمت و موقعیت خود را وارد کنید تا نزدیک‌ترین مراکز را ببینید." },
@@ -8,27 +9,11 @@ const STEPS = [
     { Icon: Car, title: "دریافت خدمت", desc: "در زمان مقرر به مرکز مراجعه و از خدمت باکیفیت لذت ببرید." },
 ];
 
-const SectionHeading = ({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) => (
-    <div className="flex flex-col items-center text-center gap-3">
-        <span className="w-fit px-4 py-1 rounded-full bg-primary/10 text-primary text-label-sm font-bold tracking-wide">
-            {eyebrow}
-        </span>
-        <h2 className="text-on-surface text-headline-lg font-black leading-tight max-w-[720px]">
-            {title}
-        </h2>
-        {subtitle && (
-            <p className="text-on-surface-variant text-body-lg font-normal leading-normal max-w-[720px]">
-                {subtitle}
-            </p>
-        )}
-    </div>
-);
-
 export const HowItWorks = () => {
     const { ref, inView } = useInView<HTMLDivElement>(0.3);
 
     return (
-        <div ref={ref} className="flex flex-col gap-12 px-4" id="how-it-works">
+        <div ref={ref} className="flex flex-col gap-12" id="how-it-works">
             <div className={`transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
                 <SectionHeading eyebrow="ساده و سریع" title="چطور در اتو پلاس نوبت می‌گیریم؟" subtitle="فقط در چهار گام ساده، خدمت موردنظر خودروی خود را رزرو کنید."/>
             </div>

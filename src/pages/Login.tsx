@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
+import { HttpService } from "../utils/HttpService.ts";
 import { 
     Eye, 
     EyeOff, 
@@ -110,20 +111,36 @@ export const LoginPage = () => {
     };
 
     // Submissions
+    const loginTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const registerTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+    useEffect(() => {
+        return () => {
+            clearTimeout(loginTimerRef.current);
+            clearTimeout(registerTimerRef.current);
+        };
+    }, []);
+
     const handleLoginSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!validateLoginForm()) return;
-        
+
         setIsLoading(true);
         setErrors({});
-        
-        setTimeout(() => {
+
+        try {
+            await HttpService.post("/api/login", {
+                body: { email: loginIdentifier, password: loginPassword },
+            });
             setIsLoading(false);
             setSuccessMessage("ورود شما با موفقیت انجام شد. به اتو پلاس خوش آمدید!");
-            setTimeout(() => {
-                navigate("/");
+            loginTimerRef.current = setTimeout(() => {
+                navigate("/dashboard");
             }, 2000);
-        }, 1500);
+        } catch {
+            setIsLoading(false);
+            setErrors({ loginPassword: "ایمیل یا رمز عبور نادرست است." });
+        }
     };
 
     const handleRegisterSubmit = async (e: React.FormEvent) => {
@@ -133,10 +150,10 @@ export const LoginPage = () => {
         setIsLoading(true);
         setErrors({});
         
-        setTimeout(() => {
+        registerTimerRef.current = setTimeout(() => {
             setIsLoading(false);
             setSuccessMessage("حساب کاربری شما ساخته شد. آماده استفاده از خدمات ویژه هستید!");
-            setTimeout(() => {
+            registerTimerRef.current = setTimeout(() => {
                 navigate("/");
             }, 2000);
         }, 1500);

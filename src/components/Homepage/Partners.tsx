@@ -3,6 +3,7 @@ import {HttpService} from "../../utils/HttpService";
 import type {Partner} from "../../types/handler.ts";
 import {useQuery} from "@tanstack/react-query";
 import {useInView} from "../../utils/useInView";
+import {Link} from "react-router";
 
 const CARD_STAGGER = 150
 
@@ -15,7 +16,7 @@ export const Partners = () => {
     const { ref, inView: isInView } = useInView<HTMLDivElement>(0.4)
 
     return (
-        <div ref={ref} className="flex flex-col gap-12 px-4 py-16 items-center mb-16" id="centers">
+        <div ref={ref} className="flex flex-col gap-12 py-16 items-center mb-16" id="centers">
             <div className={`flex flex-col items-center text-center gap-4 mb-8 transition-all duration-700 ${isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
                 <h2 className="text-on-surface text-headline-lg font-black leading-tight max-w-180">
                     مراکز معتبر، تایید شده توسط مشتریان
@@ -44,7 +45,7 @@ export const Partners = () => {
                                     <span key={tag} className="text-xs font-medium bg-surface-container-high px-2 py-1 rounded-md text-on-surface-variant">{tag}</span>
                                 ))}
                             </div>
-                            <button className="mt-4 cursor-pointer w-full h-10 rounded-full bg-primary/10 text-primary font-bold hover:bg-primary/20 transition-colors">مشاهده و رزرو</button>
+                            <Link to="/login" className="mt-4 cursor-pointer w-full h-10 rounded-full bg-primary/10 text-primary font-bold hover:bg-primary/20 transition-colors flex items-center justify-center">مشاهده و رزرو</Link>
                         </div>
                     </div>
                 ))}
