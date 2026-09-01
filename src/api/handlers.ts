@@ -3,6 +3,20 @@ import type {Partner} from "../types/handler.ts";
 import {POSTS} from "./data/blogs.ts";
 import {BOOKINGS} from "./data/bookings.ts";
 import {SERVICES} from "./data/services.ts";
+import {VEHICLES, SERVICE_HISTORIES} from "./data/vehicles.ts";
+import {FAVORITES} from "./data/favorites.ts";
+import {TICKETS} from "./data/tickets.ts";
+import {NOTIFICATIONS} from "./data/notifications.ts";
+import {CUSTOMERS} from "./data/customers.ts";
+import {REVIEWS} from "./data/reviews.ts";
+import {
+    DASHBOARD_KPIS,
+    DASHBOARD_REVENUE,
+    DASHBOARD_ACTIVITIES,
+    DASHBOARD_POPULAR_SERVICES,
+    USER_KPIS,
+    DASHBOARD_SERVICES,
+} from "./data/dashboard.ts";
 const partners: Partner[] = [
     {
         id: 1,
@@ -31,6 +45,19 @@ const partners: Partner[] = [
 ]
 
 
+
+/* Mutable stores (managed by handlers) */
+let vehiclesStore = [...VEHICLES];
+let favoritesStore = [...FAVORITES];
+let ticketsStore = [...TICKETS];
+let ticketMsgCounter = TICKETS.reduce((max, t) => Math.max(max, t.messages.length), 0);
+let notifsStore = [...NOTIFICATIONS];
+let profileStore = { name: "am1r", phone: "۰۹۱۲۳۴۵۶۷۸۹", email: "user@example.com", avatar: "basicURL" };
+let centerStore = { name: "مرکز خدمات تخصصی اتو پلاس", address: "تهران، خیابان ولیعصر، پلاک ۱۲۳", phone: "۰۲۱-۸۸۸۸۸۸۸۸", workingHours: "شنبه تا پنجشنبه - ۸ صبح تا ۸ شب" };
+let bookingsStore = [...BOOKINGS];
+let dashServicesStore = [...DASHBOARD_SERVICES];
+let reviewsStore = [...REVIEWS];
+let customersStore = [...CUSTOMERS];
 
 export const handlers = [
     http.get("/api/health", () => {
@@ -232,15 +259,283 @@ export const handlers = [
     http.get("/api/auth/me", () => {
         return HttpResponse.json({
             status: "ok",
-            role: "user" /* "specialist / user"  Both works */,
+            role: "user",
             name: "am1r",
             username: "Am1r",
             phone: "09123456789",
             avatar: "basicURL",
-            // This is user/specialist self-data response
-            // Specialist = Service provider
+            email: "user@example.com",
         });
     }),
 
+    /* ===== VEHICLES ===== */
+    http.get("/api/vehicles", () => {
+        return HttpResponse.json(vehiclesStore);
+    }),
+    http.post("/api/vehicles", async ({ request }) => {
+        const body = (await request.json()) as Partial<typeof VEHICLES[0]>;
+        const newVehicle = {
+            id: Date.now(),
+            name: body.name || "",
+            plate: body.plate || "",
+            type: body.type || "سواری",
+            year: body.year || "",
+            lastService: "جدید",
+            status: "ok" as const,
+        };
+        vehiclesStore = [newVehicle, ...vehiclesStore];
+        return HttpResponse.json(newVehicle, { status: 201 });
+    }),
+    http.put("/api/vehicles/:id", async ({ params, request }) => {
+        const id = Number(params.id);
+        const body = (await request.json()) as Partial<typeof VEHICLES[0]>;
+        vehiclesStore = vehiclesStore.map((v) => v.id === id ? { ...v, ...body } : v);
+        const updated = vehiclesStore.find((v) => v.id === id);
+        return HttpResponse.json(updated || { success: false }, { status: updated ? 200 : 404 });
+    }),
+    http.delete("/api/vehicles/:id", ({ params }) => {
+        const id = Number(params.id);
+        vehiclesStore = vehiclesStore.filter((v) => v.id !== id);
+        return HttpResponse.json({ success: true });
+    }),
+    http.get("/api/vehicles/:id/history", ({ params }) => {
+        const id = Number(params.id);
+        return HttpResponse.json(SERVICE_HISTORIES[id] || []);
+    }),
 
+    /* ===== FAVORITES ===== */
+    
+    http.get("/api/favorites", () => {
+        return HttpResponse.json(favoritesStore);
+    }),
+    http.post("/api/favorites", async ({ request }) => {
+        const body = (await request.json()) as { centerId?: number };
+        const newFav = { id: Date.now(), name: "مرکز جدید", address: "آدرس", rating: 4.5, reviews: 0, phone: "۰۲۱-۰۰۰۰۰۰۰۰", isOpen: true, ...body };
+        favoritesStore = [newFav, ...favoritesStore];
+        return HttpResponse.json(newFav, { status: 201 });
+    }),
+    http.delete("/api/favorites/:id", ({ params }) => {
+        const id = Number(params.id);
+        favoritesStore = favoritesStore.filter((f) => f.id !== id);
+        return HttpResponse.json({ success: true });
+    }),
+
+    /* ===== SUPPORT TICKETS ===== */
+    http.get("/api/support/tickets", () => {
+        return HttpResponse.json(ticketsStore);
+    }),
+    http.get("/api/support/tickets/:id", ({ params }) => {
+        const ticket = ticketsStore.find((t) => t.id === params.id);
+        return HttpResponse.json(ticket || { message: "تیکت یافت نشد" }, { status: ticket ? 200 : 404 });
+    }),
+    http.post("/api/support/tickets", async ({ request }) => {
+        const body = (await request.json()) as { title?: string; message?: string };
+        const newTicket = {
+            id: `T-${Date.now()}`,
+            title: body.title || "بدون عنوان",
+            status: "open" as const,
+            date: "اکنون",
+            lastMessage: body.message?.trim() ? body.message : "در انتظار بررسی",
+            messages: body.message?.trim()
+                ? [{ id: `m-${Date.now()}`, from: "user" as const, text: body.message!, time: "اکنون" }]
+                : [],
+        };
+        ticketsStore = [newTicket, ...ticketsStore];
+        return HttpResponse.json(newTicket, { status: 201 });
+    }),
+    http.put("/api/support/tickets/:id", async ({ params, request }) => {
+        const body = (await request.json()) as { title?: string };
+        ticketsStore = ticketsStore.map((t) => t.id === params.id ? { ...t, ...body } : t);
+        return HttpResponse.json({ success: true });
+    }),
+    http.post("/api/support/tickets/:id/messages", async ({ params, request }) => {
+        const body = (await request.json()) as { text?: string };
+        const ticket = ticketsStore.find((t) => t.id === params.id);
+        if (!ticket || ticket.status !== "open") {
+            return HttpResponse.json({ message: "تیکت یافت نشد یا بسته شده" }, { status: 400 });
+        }
+        ticketMsgCounter++;
+        const newMsg = { id: `m-${Date.now()}-${ticketMsgCounter}`, from: "user" as const, text: body.text || "", time: "اکنون" };
+        ticketsStore = ticketsStore.map((t) => t.id === params.id ? { ...t, messages: [...t.messages, newMsg], lastMessage: body.text || "", date: "اکنون" } : t);
+        return HttpResponse.json(newMsg, { status: 201 });
+    }),
+
+    /* ===== NOTIFICATIONS ===== */
+    http.get("/api/notifications", () => {
+        return HttpResponse.json(notifsStore);
+    }),
+    http.put("/api/notifications/:id/read", ({ params }) => {
+        notifsStore = notifsStore.map((n) => n.id === params.id ? { ...n, isRead: true } : n);
+        return HttpResponse.json({ success: true });
+    }),
+
+    /* ===== PROFILE ===== */
+    http.put("/api/auth/me", async ({ request }) => {
+        const body = (await request.json()) as Partial<typeof profileStore>;
+        profileStore = { ...profileStore, ...body };
+        return HttpResponse.json({ success: true, ...profileStore });
+    }),
+    http.put("/api/auth/password", async ({ request }) => {
+        const body = (await request.json()) as { currentPassword?: string; newPassword?: string; confirmPassword?: string };
+        if (!body.currentPassword || !body.newPassword || body.newPassword !== body.confirmPassword) {
+            return HttpResponse.json({ success: false, message: "اطلاعات نامعتبر" }, { status: 400 });
+        }
+        if (body.newPassword.length < 6) {
+            return HttpResponse.json({ success: false, message: "رمز عبور حداقل ۶ کاراکتر" }, { status: 400 });
+        }
+        return HttpResponse.json({ success: true, message: "رمز عبور با موفقیت تغییر کرد" });
+    }),
+    http.put("/api/auth/center", async ({ request }) => {
+        const body = (await request.json()) as Partial<typeof centerStore>;
+        centerStore = { ...centerStore, ...body };
+        return HttpResponse.json({ success: true, ...centerStore });
+    }),
+
+    /* ===== BOOKING ACTIONS ===== */
+    http.patch("/api/bookings/:id/cancel", ({ params }) => {
+        bookingsStore = bookingsStore.map((b) => b.id === params.id ? { ...b, status: "cancelled" as const } : b);
+        return HttpResponse.json({ success: true });
+    }),
+    http.patch("/api/bookings/:id/reschedule", async ({ params, request }) => {
+        const body = (await request.json()) as { date?: string; time?: string };
+        bookingsStore = bookingsStore.map((b) => b.id === params.id ? { ...b, date: body.date || b.date, time: body.time || b.time } : b);
+        return HttpResponse.json({ success: true });
+    }),
+    http.patch("/api/bookings/:id/status", async ({ params, request }) => {
+        const payload = (await request.json()) as any;
+        const status = payload?.status || payload?.body?.status || payload?.data?.status;
+        if (status) {
+            bookingsStore = bookingsStore.map((b) => b.id === params.id ? { ...b, status } : b);
+        }
+        return HttpResponse.json({ success: true });
+    }),
+    http.get("/api/bookings/export", ({ request }) => {
+        const url = new URL(request.url);
+        const format = url.searchParams.get("format") || "csv";
+        if (format === "csv") {
+            const headers = ["مشتری", "خدمت", "خودرو", "پلاک", "مرکز", "تاریخ", "زمان", "مبلغ", "وضعیت"];
+            const rows = bookingsStore.map((b) => [b.customer, b.service, b.vehicle, b.plate, b.center, b.date, b.time, String(b.amount), b.status]);
+            const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+            return new HttpResponse("\uFEFF" + csv, { headers: { "Content-Type": "text/csv;charset=utf-8" } });
+        }
+        return HttpResponse.json({ data: bookingsStore });
+    }),
+
+    /* ===== CUSTOMERS (SPECIALIST) ===== */
+    http.get("/api/customers", ({ request }) => {
+        const url = new URL(request.url);
+        const search = url.searchParams.get("search") || "";
+        let result = customersStore;
+        if (search) result = result.filter((c) => c.name.includes(search) || c.phone.includes(search));
+        return HttpResponse.json(result);
+    }),
+    http.post("/api/customers", async ({ request }) => {
+        const payload = (await request.json()) as any;
+        const body = payload?.body || payload?.data || payload;
+        const newCustomer = {
+            id: String(Date.now()),
+            name: body.name || "مشتری جدید",
+            phone: body.phone || "---",
+            vehicles: Number(body.vehicles) || 1,
+            totalVisits: Number(body.totalVisits) || 0,
+            lastVisit: body.lastVisit || "ثبت‌نام جدید",
+            status: body.status || "active",
+        };
+        customersStore = [newCustomer, ...customersStore];
+        return HttpResponse.json(newCustomer, { status: 201 });
+    }),
+    http.put("/api/customers/:id", async ({ params, request }) => {
+        const payload = (await request.json()) as any;
+        const body = payload?.body || payload?.data || payload;
+        customersStore = customersStore.map((c) => c.id === params.id ? { ...c, ...body } : c);
+        return HttpResponse.json({ success: true });
+    }),
+    http.delete("/api/customers/:id", ({ params }) => {
+        customersStore = customersStore.filter((c) => c.id !== params.id);
+        return HttpResponse.json({ success: true });
+    }),
+
+    /* ===== DASHBOARD SERVICES (SPECIALIST) ===== */
+    http.get("/api/dashboard/services", () => {
+        return HttpResponse.json(dashServicesStore);
+    }),
+    http.post("/api/dashboard/services", async ({ request }) => {
+        const body = (await request.json()) as Partial<typeof DASHBOARD_SERVICES[0]>;
+        const newSrv = { id: `srv-${Date.now()}`, name: body.name || "", duration: body.duration || "", basePrice: body.basePrice || 0, status: "active" as const };
+        dashServicesStore = [newSrv, ...dashServicesStore];
+        return HttpResponse.json(newSrv, { status: 201 });
+    }),
+    http.put("/api/dashboard/services/:id", async ({ params, request }) => {
+        const body = (await request.json()) as Partial<typeof DASHBOARD_SERVICES[0]>;
+        dashServicesStore = dashServicesStore.map((s) => s.id === params.id ? { ...s, ...body } : s);
+        return HttpResponse.json({ success: true });
+    }),
+    http.delete("/api/dashboard/services/:id", ({ params }) => {
+        dashServicesStore = dashServicesStore.filter((s) => s.id !== params.id);
+        return HttpResponse.json({ success: true });
+    }),
+
+    /* ===== REVIEWS (SPECIALIST) ===== */
+    http.get("/api/reviews", () => {
+        return HttpResponse.json(reviewsStore);
+    }),
+    http.put("/api/reviews/:id/status", async ({ params, request }) => {
+        const payload = (await request.json()) as any;
+        const status = payload?.status || payload?.body?.status || payload?.data?.status;
+        reviewsStore = reviewsStore.map((r) => r.id === params.id ? { ...r, status: status || r.status } : r);
+        return HttpResponse.json({ success: true });
+    }),
+    http.post("/api/reviews/:id/reply", async ({ params, request }) => {
+        const payload = (await request.json()) as any;
+        const reply = payload?.reply || payload?.body?.reply || payload?.data?.reply || "";
+        reviewsStore = reviewsStore.map((r) => r.id === params.id ? { ...r, reply } : r);
+        return HttpResponse.json({ success: true });
+    }),
+    http.delete("/api/reviews/:id", ({ params }) => {
+        reviewsStore = reviewsStore.filter((r) => r.id !== params.id);
+        return HttpResponse.json({ success: true });
+    }),
+
+    /* ===== DASHBOARD WIDGETS ===== */
+    http.get("/api/dashboard/kpis", () => HttpResponse.json(DASHBOARD_KPIS)),
+    http.get("/api/dashboard/revenue", ({ request }) => {
+        const url = new URL(request.url);
+        const period = url.searchParams.get("period") || "week";
+        let series = DASHBOARD_REVENUE.series;
+        let total = DASHBOARD_REVENUE.total;
+        let change = DASHBOARD_REVENUE.change;
+
+        if (period === "month") {
+            total = 210500000;
+            change = 24;
+            series = [
+                { day: "هفته اول", value: 35 },
+                { day: "هفته دوم", value: 60 },
+                { day: "هفته سوم", value: 85 },
+                { day: "هفته چهارم", value: 95 },
+            ];
+        } else if (period === "year") {
+            total = 2450000000;
+            change = 32;
+            series = [
+                { day: "فروردین", value: 45 },
+                { day: "اردیبهشت", value: 55 },
+                { day: "خرداد", value: 70 },
+                { day: "تیر", value: 85 },
+                { day: "مرداد", value: 60 },
+                { day: "شهریور", value: 75 },
+                { day: "مهر", value: 80 },
+                { day: "آبان", value: 65 },
+                { day: "آذر", value: 90 },
+                { day: "دی", value: 85 },
+                { day: "بهمن", value: 95 },
+                { day: "اسفند", value: 100 },
+            ];
+        }
+
+        return HttpResponse.json({ total, change, series, period });
+    }),
+    http.get("/api/dashboard/activity", () => HttpResponse.json(DASHBOARD_ACTIVITIES)),
+    http.get("/api/dashboard/popular-services", () => HttpResponse.json(DASHBOARD_POPULAR_SERVICES)),
+    http.get("/api/dashboard/user-kpis", () => HttpResponse.json(USER_KPIS)),
 ]

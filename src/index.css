@@ -94,6 +94,10 @@
   --font-size-display-lg-mobile--font-weight: 800;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: "Vazirmatn", sans-serif;
 }

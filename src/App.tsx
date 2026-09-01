@@ -16,11 +16,15 @@ import { ServicesPage } from "./pages/Dashboard/ServicesPage.tsx";
 import { SettingsPage } from "./pages/Dashboard/SettingsPage.tsx";
 import { ReviewsPage } from "./pages/Dashboard/ReviewsPage.tsx";
 import { SupportPage } from "./pages/Dashboard/SupportPage.tsx";
+import { NotFoundPage } from "./pages/NotFoundPage.tsx";
 import { AuthProvider } from "./contexts/AuthContext.tsx";
 import { RequireRole } from "./components/Dashboard/RequireRole.tsx";
+import { ScrollToTop } from "./components/shared/ScrollToTop.tsx";
 
 function App() {
     return (
+        <>
+        <ScrollToTop />
         <Routes>
             <Route element={<PublicLayout />}>
                 <Route path="/" element={<Homepage />} />
@@ -56,7 +60,9 @@ function App() {
                 <Route path="settings" element={<SettingsPage />} />
 
             </Route>
+            <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </>
     );
 }
 

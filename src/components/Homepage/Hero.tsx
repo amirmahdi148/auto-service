@@ -1,15 +1,22 @@
 import {useState} from "react";
 import {Users, Search} from "lucide-react";
+import {useNavigate} from "react-router";
+import {SERVICE_CATEGORIES} from "../../api/data/services";
 
-const SERVICES = ["مکانیک", "دیتیلینگ", "تایر و جلوبندی", "عیب‌یابی", "سایر"];
+const SERVICES = SERVICE_CATEGORIES.filter((c) => c.label !== "همه").map((c) => c.label);
 const CITIES = ["تهران", "کرج", "اصفهان", "شیراز", "مشهد", "تبریز", "سایر"];
 
 export const Hero = () => {
     const [service, setService] = useState("");
     const [city, setCity] = useState("");
+    const navigate = useNavigate();
 
     const handleSearch = () => {
-        document.getElementById("centers")?.scrollIntoView({behavior: "smooth"});
+        const params = new URLSearchParams();
+        if (service) params.set("category", service);
+        if (city) params.set("search", city);
+        const qs = params.toString();
+        navigate(qs ? `/services?${qs}` : "/services");
     };
 
     return (
@@ -76,7 +83,7 @@ export const Hero = () => {
                             className="shrink-0 cursor-pointer flex items-center justify-center gap-2 h-12 rounded-full bg-primary text-on-primary px-8 text-title-lg font-bold leading-normal transition-transform hover:scale-105 shadow-lg"
                         >
                             <Search className="size-5" strokeWidth={2}/>
-                            جستجوی خدمات
+                            مشاهده خدمات
                         </button>
                     </div>
                 </div>
